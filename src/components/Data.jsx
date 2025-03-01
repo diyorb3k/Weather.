@@ -89,12 +89,10 @@ const Data = () => {
 
     setLoading(true);
     try {
-      // Hozirgi ob-havo
       const weatherRes = await fetch(weatherURL);
       const weatherData = await weatherRes.json();
       if (weatherData.cod !== 200) throw new Error(weatherData.message);
 
-      // 5 kunlik prognoz
       const forecastRes = await fetch(forecastURL);
       const forecastData = await forecastRes.json();
       if (forecastData.cod !== "200") throw new Error(forecastData.message);
@@ -123,16 +121,28 @@ const Data = () => {
     list.forEach((item) => {
       const date = new Date(item.dt * 1000).toLocaleDateString(language, { day: "numeric", month: "short" });
       if (!dailyData[date]) {
-        dailyData[date] = { temps: [], weather: item.weather[0].main };
+        dailyData[date] = {
+          temps: [],
+          windSpeeds: [],
+          humidities: [],
+          pressures: [],
+          weather: item.weather[0].main,
+        };
       }
       dailyData[date].temps.push(item.main.temp);
+      dailyData[date].windSpeeds.push(item.wind.speed);
+      dailyData[date].humidities.push(item.main.humidity);
+      dailyData[date].pressures.push(item.main.pressure);
     });
 
     return Object.keys(dailyData).map((date) => ({
       date,
       temp: Math.round(dailyData[date].temps.reduce((a, b) => a + b, 0) / dailyData[date].temps.length),
+      windSpeed: Math.round(dailyData[date].windSpeeds.reduce((a, b) => a + b, 0) / dailyData[date].windSpeeds.length),
+      humidity: Math.round(dailyData[date].humidities.reduce((a, b) => a + b, 0) / dailyData[date].humidities.length),
+      pressure: Math.round(dailyData[date].pressures.reduce((a, b) => a + b, 0) / dailyData[date].pressures.length),
       weather: dailyData[date].weather,
-    })).slice(0, 5); // Faqat 5 kun
+    })).slice(0, 8); // Faqat 5 kun
   };
 
   useEffect(() => {
@@ -319,6 +329,11 @@ const Data = () => {
                     />
                     <p className="text-lg md:text-xl lg:text-2xl text-gray-600">{day.temp} <sup>o</sup>C</p>
                     <p className="text-sm md:text-base text-gray-600 capitalize">{day.weather}</p>
+                    <div className="text-sm md:text-base text-gray-600 mt-2">
+                      <p><FontAwesomeIcon icon={faWind} className="text-blue-500 mr-1" /> {day.windSpeed} m/s</p>
+                      <p><FontAwesomeIcon icon={faTint} className="text-blue-400 mr-1" /> {day.humidity} %</p>
+                      <p><FontAwesomeIcon icon={faCompressAlt} className="text-gray-500 mr-1" /> {day.pressure} hPa</p>
+                    </div>
                   </div>
                 ))}
               </div>
