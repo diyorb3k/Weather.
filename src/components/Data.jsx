@@ -10,7 +10,8 @@ import {
 
 const Data = () => {
   const API_KEY = "5f8503fb89ffdb650735ce3ffd36d138";
-  const [weather, setWeather] = useState(null);
+  const [weather, setWeather] = useState(null); // Hozirgi ob-havo
+  const [forecast, setForecast] = useState([]); // 5 kunlik prognoz
   const [cityInput, setCityInput] = useState("Samarqand,UZ"); // Default Samarqand
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState("");
@@ -79,24 +80,33 @@ const Data = () => {
     }
 
     const [cityName, countryCode] = searchCity.split(',').map(item => item.trim());
-    const URL = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}${
+    const weatherURL = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}${
+      countryCode ? `,${encodeURIComponent(countryCode)}` : ''
+    }&appid=${API_KEY}&units=metric`;
+    const forecastURL = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityName)}${
       countryCode ? `,${encodeURIComponent(countryCode)}` : ''
     }&appid=${API_KEY}&units=metric`;
 
     setLoading(true);
     try {
-      const res = await fetch(URL);
-      const data = await res.json();
+      // Hozirgi ob-havo
+      const weatherRes = await fetch(weatherURL);
+      const weatherData = await weatherRes.json();
+      if (weatherData.cod !== 200) throw new Error(weatherData.message);
 
-      if (data.cod === 200) {
-        setWeather(data);
-        setError("");
-        setSuggestions([]);
-      } else {
-        throw new Error(data.message);
-      }
+      // 5 kunlik prognoz
+      const forecastRes = await fetch(forecastURL);
+      const forecastData = await forecastRes.json();
+      if (forecastData.cod !== "200") throw new Error(forecastData.message);
+
+      setWeather(weatherData);
+      const dailyForecast = processForecastData(forecastData.list);
+      setForecast(dailyForecast);
+      setError("");
+      setSuggestions([]);
     } catch (error) {
       setWeather(null);
+      setForecast([]);
       setError(
         error.message === "city_mismatch"
           ? translations[language].errorCityNotFound
@@ -105,6 +115,24 @@ const Data = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 5 kunlik ma'lumotlarni kunlik o'rtacha sifatida qayta ishlash
+  const processForecastData = (list) => {
+    const dailyData = {};
+    list.forEach((item) => {
+      const date = new Date(item.dt * 1000).toLocaleDateString(language, { day: "numeric", month: "short" });
+      if (!dailyData[date]) {
+        dailyData[date] = { temps: [], weather: item.weather[0].main };
+      }
+      dailyData[date].temps.push(item.main.temp);
+    });
+
+    return Object.keys(dailyData).map((date) => ({
+      date,
+      temp: Math.round(dailyData[date].temps.reduce((a, b) => a + b, 0) / dailyData[date].temps.length),
+      weather: dailyData[date].weather,
+    })).slice(0, 5); // Faqat 5 kun
   };
 
   useEffect(() => {
@@ -140,6 +168,7 @@ const Data = () => {
     setLanguage(e.target.value);
     setCityInput("Samarqand,UZ");
     setWeather(null);
+    setForecast([]);
     setSuggestions([]);
     getWeather("Samarqand,UZ");
   };
@@ -238,8 +267,8 @@ const Data = () => {
             <p className="text-gray-600 text-sm md:text-base lg:text-lg">{translations[language].dateLabel}: {currentDate}</p>
           </div>
 
+          {/* Hozirgi ob-havo */}
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Temperature Card */}
             <div className="bg-white/70 p-4 rounded-lg shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faSun} className="text-xl md:text-2xl text-yellow-500" />
@@ -247,8 +276,6 @@ const Data = () => {
               </div>
               <p className="text-lg md:text-xl lg:text-2xl text-gray-600">{Math.round(weather.main.temp)} <sup>o</sup>C</p>
             </div>
-
-            {/* Wind Speed Card */}
             <div className="bg-white/70 p-4 rounded-lg shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faWind} className="text-xl md:text-2xl text-blue-500" />
@@ -256,8 +283,6 @@ const Data = () => {
               </div>
               <p className="text-lg md:text-xl lg:text-2xl text-gray-600">{weather.wind.speed} m/s</p>
             </div>
-
-            {/* Humidity Card */}
             <div className="bg-white/70 p-4 rounded-lg shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faTint} className="text-xl md:text-2xl text-blue-400" />
@@ -265,8 +290,6 @@ const Data = () => {
               </div>
               <p className="text-lg md:text-xl lg:text-2xl text-gray-600">{weather.main.humidity} %</p>
             </div>
-
-            {/* Pressure Card */}
             <div className="bg-white/70 p-4 rounded-lg shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faCompressAlt} className="text-xl md:text-2xl text-gray-500" />
@@ -274,8 +297,6 @@ const Data = () => {
               </div>
               <p className="text-lg md:text-xl lg:text-2xl text-gray-600">{weather.main.pressure} hPa</p>
             </div>
-
-            {/* Condition Card */}
             <div className="bg-white/70 p-4 rounded-lg shadow-md flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={getWeatherIcon(weather.weather[0].main)} className="text-xl md:text-2xl text-gray-600" />
@@ -284,6 +305,25 @@ const Data = () => {
               <p className="text-lg md:text-xl lg:text-2xl text-gray-600 capitalize">{weather.weather[0].description}</p>
             </div>
           </div>
+
+          {/* 5 kunlik prognoz */}
+          {forecast.length > 0 && (
+            <div className="w-full mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {forecast.map((day, index) => (
+                  <div key={index} className="bg-white/70 p-4 rounded-lg shadow-md flex flex-col items-center">
+                    <p className="text-sm md:text-base lg:text-lg font-semibold text-gray-800">{day.date}</p>
+                    <FontAwesomeIcon
+                      icon={getWeatherIcon(day.weather)}
+                      className="text-xl md:text-2xl lg:text-3xl text-yellow-500 my-2"
+                    />
+                    <p className="text-lg md:text-xl lg:text-2xl text-gray-600">{day.temp} <sup>o</sup>C</p>
+                    <p className="text-sm md:text-base text-gray-600 capitalize">{day.weather}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
