@@ -1,0 +1,103 @@
+/* Data.css */
+.fonemagee {
+  background-image: url('your-weather-background.jpg'); /* Add your image here */
+  background-size: cover;
+  background-position: center;
+  max-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.container {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.inputname {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 15px;
+  font-size: 18px;
+  border: none;
+  border-radius: 50px;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+  padding: 15px 30px;
+  font-size: 18px;
+  border: none;
+  border-radius: 50px;
+  background-color: #007BFF;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.temp {
+  font-size: 24px;
+  text-align: center;
+  margin-top: 30px;
+}
+
+.weather-info {
+  text-align: center;
+}
+
+.weather-icon {
+  color: #007BFF;
+  margin-bottom: 10px;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.language-select {
+  padding: 15px;
+  border-radius: 5px;
+  
+  font-size: 16px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.3s;
+}
+
+.language-select:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.language-select:focus {
+  border-color: #007BFF;
+}
+.input_select{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  
+}
+.language-select{
+  border: 1px solid #ccc;
+}
